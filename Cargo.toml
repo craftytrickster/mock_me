@@ -1,0 +1,10 @@
+[package]
+name = "mockme"
+version = "0.1.0"
+authors = ["David Raifaizen <d-raif@hotmail.com>"]
+
+[dependencies]
+
+[lib]
+crate-type = ["proc-macro"]
+
