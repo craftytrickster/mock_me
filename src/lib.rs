@@ -25,16 +25,46 @@
 //! ```
 
 #![feature(proc_macro)]
+#![feature(insert_str)]
 
 extern crate proc_macro;
 use proc_macro::TokenStream;
 
+extern crate syn;
+extern crate test_context;
+
+#[proc_macro_attribute]
+pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let (mock_id, method_to_inject) = get_attr_tuple(attr);
+    let mut source = item.to_string();
+
+    let context_setter_string = format!(r#"
+        extern crate test_context;
+        let ctx = test_context::get_test_context();
+        ctx.set("{}".to_string(), {});
+    "#, mock_id, method_to_inject);
+
+    // I should find a more structured way of injecting test context into top of method
+    let insertion_point = source.find("{").unwrap() + 1;
+    source.insert_str(insertion_point, &*context_setter_string);
+
+    source.parse().unwrap()
+}
+
+
 #[proc_macro_attribute]
 pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let (concrete, test) = get_concrete_and_test_names(attr);
+    let (concrete, mock_id) = get_attr_tuple(attr);
 
     let source = item.to_string();
-    let modified_source = source.replace(&*concrete, &*test);
+    let ctx_getter = format!(r#"
+        extern crate test_context;
+        let ctx = test_context::get_test_context();
+        ctx.get("{}")
+    "#, mock_id);
+
+    // string replacement should be more controlled ideally than a blind replace
+    let modified_source = source.replace(&*concrete, &*ctx_getter);
 
     let branched_source = format!(
         r#"
@@ -51,7 +81,7 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 // FIXME: This should be done in a more structured way
 // Validation on value types might be a good idea
-fn get_concrete_and_test_names(attr: TokenStream) -> (String, String) {
+fn get_attr_tuple(attr: TokenStream) -> (String, String) {
     let attr_str = attr.to_string();
     let pair = &attr_str[1..attr_str.len() - 1].replace(" ", "");
 
