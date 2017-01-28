@@ -2,15 +2,14 @@
 extern crate lazy_static;
 
 use std::ops::Drop;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::collections::HashMap;
-use std::any::Any;
 
 lazy_static! {
     // Protected by Mutex since tests can be run in parallel
-    static ref GLOBAL_FUNCTION_LOOKUP: Mutex<HashMap<String, Arc<Any + Send + Sync>>> = {
+    // usize represents the pointer to the function that we are storing
+    static ref GLOBAL_FUNCTION_LOOKUP: Mutex<HashMap<String, usize>> = {
         let m = HashMap::new();
-
         Mutex::new(m)
     };
 }
@@ -18,14 +17,14 @@ lazy_static! {
 pub struct TextContext;
 
 impl TextContext {
-    pub fn set(&self, key: String, value: fn(f64, u32) -> String) {
+    pub fn set(&self, key: String, value: usize) {
         let mut lookup = GLOBAL_FUNCTION_LOOKUP.lock().unwrap();
-        lookup.insert(key, Arc::new(value) as Arc<Any + Send + Sync>);
+        lookup.insert(key, value);
     }
 
-    pub fn get(&self, key: &str) -> Arc<Any + Send + Sync> {
+    pub fn get(&self, key: &str) -> usize {
         let lookup   = GLOBAL_FUNCTION_LOOKUP.lock().unwrap();
-        lookup.get(key).unwrap().clone()
+        *lookup.get(key).unwrap()
     }
 }
 

@@ -20,11 +20,11 @@ fn actual_test() {
 #[inject(mock_method_id_1="duh")]
 fn actual_test2() {
     let result = function_call_with_mock(50000f64);
-    assert_eq!(result, "stupid");
+    assert_eq!(result, "stupid100");
 }
 
-fn duh(_: f64, v: u32) -> String { format!("stupid{}", v) }
-
+fn duh(_: f64, v: u32) -> String { format!("stupid{}99", v) }
+fn fake_multiple(value: f64) -> f64 { 12340f64 }
 /*
 #[mock(
     fun_crazy_mock(concrete_process_payment="fn(f64) -> String"),
@@ -32,11 +32,17 @@ fn duh(_: f64, v: u32) -> String { format!("stupid{}", v) }
 )]
 */
 
-#[mock(mock_method_id_1="concrete_process_payment: fn(f64, u32) -> String")]
+#[mock(
+    mock_method_id_1="concrete_process_payment: fn(f64, u32) -> String"
+)]
 fn function_call_with_mock(value: f64) -> String {
-    concrete_process_payment(value, 100u32)
+    let second_value = multiple(100f64);
+    concrete_process_payment(value, second_value as u32)
 }
 
+fn multiple(value: f64) -> f64 {
+    value * 52f64
+}
 
 fn concrete_process_payment(amount: f64, v: u32) -> String {
     format!("Concrete payment of {} just processed", amount + v as f64)

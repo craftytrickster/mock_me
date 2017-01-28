@@ -49,7 +49,7 @@ pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
     for i_match in inject_matches {
         write!(
             context_setter_string,
-            "_mock_me_test_context_instance.set(\"{}\".to_string(), {});\n",
+            "_mock_me_test_context_instance.set(\"{}\".to_string(), {} as usize);\n",
             i_match.identifier, i_match.function_to_mock
         ).unwrap();
     }
@@ -75,10 +75,11 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut modified_source = source.clone();
     for m_match in mock_matches {
         let ctx_getter = format!(r#"
-            let _mock_me_test_casted_func = _mock_me_test_context_instance.get("{}").clone();
-            let _mock_me_test_casted_ref = _mock_me_test_casted_func.as_ref() as &std::any::Any;
-
-            _mock_me_test_casted_ref.downcast_ref::<{}>().unwrap()
+            (unsafe {{
+                let _mock_me_test_usize_func = _mock_me_test_context_instance.get("{}");
+                let _mock_me_test_transmuted_func: {} = std::mem::transmute(_mock_me_test_usize_func);
+                _mock_me_test_transmuted_func
+            }})
         "#, m_match.identifier, m_match.function_signature);
 
         // string replacement should be more controlled ideally than a blind replace
