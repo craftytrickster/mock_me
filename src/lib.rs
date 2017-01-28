@@ -59,8 +59,13 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
     let source = item.to_string();
     let ctx_getter = format!(r#"
         extern crate test_context;
+        use std::any::Any;
+
         let ctx = test_context::get_test_context();
-        ctx.get("{}")
+        let casted_func = ctx.get("{}").clone();
+        let casted_ref = casted_func.as_ref() as &Any;
+
+        casted_ref.downcast_ref::<fn(f64) -> String>().unwrap()
     "#, mock_id);
 
     // string replacement should be more controlled ideally than a blind replace
