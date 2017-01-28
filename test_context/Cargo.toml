@@ -1,5 +1,5 @@
 [package]
-name = "test_context"
+name = "mock_me_test_context"
 version = "0.1.0"
 authors = ["David Raifaizen <d-raif@hotmail.com>"]
 

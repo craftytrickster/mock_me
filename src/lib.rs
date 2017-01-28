@@ -30,19 +30,29 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 
-extern crate syn;
-extern crate test_context;
+extern crate mock_me_test_context;
+use std::fmt::Write;
+
+const HEADER: &'static str = r#"
+    extern crate mock_me_test_context;
+    let _mock_me_test_context_instance = mock_me_test_context::get_test_context();
+"#;
 
 #[proc_macro_attribute]
 pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let (mock_id, method_to_inject) = get_attr_tuple(attr);
+    let inject_matches = get_inject_matches(attr);
+
     let mut source = item.to_string();
 
-    let context_setter_string = format!(r#"
-        extern crate test_context;
-        let ctx = test_context::get_test_context();
-        ctx.set("{}".to_string(), {});
-    "#, mock_id, method_to_inject);
+    let mut context_setter_string = HEADER.to_string();
+
+    for i_match in inject_matches {
+        write!(
+            context_setter_string,
+            "_mock_me_test_context_instance.set(\"{}\".to_string(), {});\n",
+            i_match.identifier, i_match.function_to_mock
+        ).unwrap();
+    }
 
     // I should find a more structured way of injecting test context into top of method
     let insertion_point = source.find("{").unwrap() + 1;
@@ -54,22 +64,27 @@ pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let (concrete, mock_id) = get_attr_tuple(attr);
+    let mock_matches = get_mock_matches(attr);
 
-    let source = item.to_string();
-    let ctx_getter = format!(r#"
-        extern crate test_context;
-        use std::any::Any;
+    let mut source = item.to_string();
 
-        let ctx = test_context::get_test_context();
-        let casted_func = ctx.get("{}").clone();
-        let casted_ref = casted_func.as_ref() as &Any;
+    // I should find a more structured way of injecting test context into top of method
+    let insertion_point = source.find("{").unwrap() + 1;
+    source.insert_str(insertion_point, HEADER);
 
-        casted_ref.downcast_ref::<fn(f64) -> String>().unwrap()
-    "#, mock_id);
+    let mut modified_source = source.clone();
+    for m_match in mock_matches {
+        let ctx_getter = format!(r#"
+            let _mock_me_test_casted_func = _mock_me_test_context_instance.get("{}").clone();
+            let _mock_me_test_casted_ref = _mock_me_test_casted_func.as_ref() as &std::any::Any;
 
-    // string replacement should be more controlled ideally than a blind replace
-    let modified_source = source.replace(&*concrete, &*ctx_getter);
+            _mock_me_test_casted_ref.downcast_ref::<{}>().unwrap()
+        "#, m_match.identifier, m_match.function_signature);
+
+        // string replacement should be more controlled ideally than a blind replace
+        modified_source = modified_source.replace(&*m_match.function_to_mock, &*ctx_getter);
+    }
+
 
     let branched_source = format!(
         r#"
@@ -81,20 +96,60 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
         "#, source, modified_source
     );
 
+
     branched_source.parse().unwrap()
 }
 
-// FIXME: This should be done in a more structured way
-// Validation on value types might be a good idea
-fn get_attr_tuple(attr: TokenStream) -> (String, String) {
+#[derive(Debug)]
+struct InjectMatch {
+    identifier: String,
+    function_to_mock: String,
+}
+
+#[derive(Debug)]
+struct MockMatch {
+    identifier: String,
+    function_to_mock: String,
+    function_signature: String
+}
+
+fn get_inject_matches(attr: TokenStream) -> Vec<InjectMatch> {
     let attr_str = attr.to_string();
-    let pair = &attr_str[1..attr_str.len() - 1].replace(" ", "");
+    let without_parens = &attr_str[1..attr_str.len() - 1];
 
-    let concrete_test_vec: Vec<_> = pair.split(",").collect();
-    let items_specified = concrete_test_vec.len();
-    assert_eq!(items_specified, 2,
-        "There should be two items specified for the mock, you have specified: {}", items_specified
-    );
+    let mut result = vec![];
 
-    (concrete_test_vec[0].to_string(), concrete_test_vec[1].to_string())
+    for part in without_parens.split("\" ,") {
+        let sub_parts: Vec<_> = part.split("=").collect();
+        let identifier = sub_parts[0].trim().to_string();
+        let function_to_mock = sub_parts[1].trim().replace("\"", "");
+
+        result.push(InjectMatch { identifier: identifier, function_to_mock: function_to_mock });
+    }
+
+    result
+}
+
+fn get_mock_matches(attr: TokenStream) -> Vec<MockMatch> {
+    let attr_str = attr.to_string();
+    let without_parens = &attr_str[1..attr_str.len() - 1];
+
+    let mut result = vec![];
+
+    for part in without_parens.split("\" ,") {
+        let sub_parts: Vec<_> = part.split("=").collect();
+        let identifier = sub_parts[0].trim().to_string();
+
+        let function_portions: Vec<_> = sub_parts[1].split(":").collect();
+        let function_to_mock = function_portions[0].trim().to_string().replace("\"", "");
+        let function_signature = function_portions[1].trim().replace("\"", "");
+
+        result.push(MockMatch {
+            identifier: identifier,
+            function_to_mock: function_to_mock,
+            function_signature: function_signature
+        });
+    }
+
+    result
 }

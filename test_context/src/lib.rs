@@ -18,7 +18,7 @@ lazy_static! {
 pub struct TextContext;
 
 impl TextContext {
-    pub fn set(&self, key: String, value: fn(f64) -> String) {
+    pub fn set(&self, key: String, value: fn(f64, u32) -> String) {
         let mut lookup = GLOBAL_FUNCTION_LOOKUP.lock().unwrap();
         lookup.insert(key, Arc::new(value) as Arc<Any + Send + Sync>);
     }
