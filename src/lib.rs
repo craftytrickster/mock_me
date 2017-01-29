@@ -61,7 +61,7 @@ use macro_helper::*;
 /// the mocked function within quotes, as well as the mocked function signature.
 #[proc_macro_attribute]
 pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mock_matches = get_mock_matches(attr);
+    let mock_matches = get_mock_matches(&*attr.to_string());
 
     let mut source = item.to_string();
 
@@ -103,7 +103,7 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// the mocked function within quotes.
 #[proc_macro_attribute]
 pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let inject_matches = get_inject_matches(attr);
+    let inject_matches = get_inject_matches(&*attr.to_string());
 
     let mut source = item.to_string();
 
