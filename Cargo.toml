@@ -10,7 +10,7 @@ categories = ["development-tools::testing"]
 license = "MIT"
 
 [dependencies]
-mock_me_test_context = { path = "./test_context", version = "0.1.0" }
+mock_me_test_context = "0.1.0"
 
 [lib]
 crate-type = ["proc-macro"]
