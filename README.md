@@ -5,6 +5,8 @@ MockMe is a tool used to mock dependencies / function calls when running unit (l
 
 ## How to Use
 
+*Currently, only works on nightly*
+
 Simply use the macro as seen in the example below.
 When this code is run normally, MockMe will have no effect.
 However, when the code is run as part of a unit test `#[cfg(test)]`,
@@ -14,7 +16,7 @@ the mocked token will be used instead.
 
  #![feature(proc_macro)]
  extern crate mockme;
- use mockme::mock;
+ use mockme::{mock, inject};
 
  // Below we will create two mocking identifiers called id_1 and id_2.
  // We will then provide the name of the two functions we are mocking, as well as
