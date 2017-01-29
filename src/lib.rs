@@ -7,61 +7,58 @@
 //! However, when the code is run as part of a unit test #[cfg(test)],
 //! the mocked token will be used instead.
 //!
+//! In order to use, we first must mark the functions that we would like to mock.
+//! When running tests, we then identify the replacement function that we would like to inject.
 //!
 //! ```rust,ignore
 //!
 //! #![feature(proc_macro)]
-//! extern crate mockme;
-//! use mockme::mock;
+//! extern crate mock_me;
+//! use mock_me::{mock, inject};
 //!
-//! #[mock(external_db_call, fake_mocked_call)]
-//! fn my_super_cool_function() {
-//!     let input = 42;
+//! // Below we will create two mocking identifiers called id_1 and id_2.
+//! // We will then provide the name of the two functions we are mocking, as well as
+//! // their type signature. In future iterations, hopefully the signature won't be needed.
+//! #[mock(id_1="external_db_call: fn(u32) -> String", id_2="other_call: fn() -> String")]
+//! fn my_super_cool_function() -> String {
+//!     let input = 42u32;
 //!     // external_db_call will be replaced with fake_mocked_call during testing
-//!     let result = external_db_call(input);
-//!     println!("{}", result);
+//!     let db_result = external_db_call(input);
+//!
+//!     // other_call will also be replaced
+//!     let other_result = other_call();
+//!     format!("I have two results! {} and {}", db_result, other_result)
 //! }
+//!
+//! // Finally, when we run our tests, we simply need to provide the identifier we previously used,
+//! // as well as the name of the replacement function
+//! #[test]
+//! #[inject(id_1="db_fake", id_2="other_fake")]
+//! fn actual_test2() {
+//!     let result = my_super_cool_function();
+//!     assert_eq!(result, "I have two results! Faker! and This is indeed a disturbing universe.");
+//! }
+//!
+//! fn db_fake(_: u32) -> String { "Faker!".to_string() }
+//! fn other_fake() -> String { "This is indeed a disturbing universe.".to_string() }
 //!
 //! ```
 
 #![feature(proc_macro)]
 #![feature(insert_str)]
-
 extern crate proc_macro;
 use proc_macro::TokenStream;
 
 extern crate mock_me_test_context;
+
 use std::fmt::Write;
 
-const HEADER: &'static str = r#"
-    extern crate mock_me_test_context;
-    let _mock_me_test_context_instance = mock_me_test_context::get_test_context();
-"#;
+mod macro_helper;
+use macro_helper::*;
 
-#[proc_macro_attribute]
-pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let inject_matches = get_inject_matches(attr);
-
-    let mut source = item.to_string();
-
-    let mut context_setter_string = HEADER.to_string();
-
-    for i_match in inject_matches {
-        write!(
-            context_setter_string,
-            "_mock_me_test_context_instance.set(\"{}\".to_string(), {} as usize);\n",
-            i_match.identifier, i_match.function_to_mock
-        ).unwrap();
-    }
-
-    // I should find a more structured way of injecting test context into top of method
-    let insertion_point = source.find("{").unwrap() + 1;
-    source.insert_str(insertion_point, &*context_setter_string);
-
-    source.parse().unwrap()
-}
-
-
+/// The mock macro is used mock a concrete function that is not desired during unit tests.
+/// Its signature contains the identifier that is being mocked, with the function that will replace
+/// the mocked function within quotes, as well as the mocked function signature.
 #[proc_macro_attribute]
 pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mock_matches = get_mock_matches(attr);
@@ -101,56 +98,28 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
     branched_source.parse().unwrap()
 }
 
-#[derive(Debug)]
-struct InjectMatch {
-    identifier: String,
-    function_to_mock: String,
-}
+/// The inject macro is used to replace a mocked function with an alternative implementation.
+/// Its signature contains the identifier that is being mocked, with the function that will replace
+/// the mocked function within quotes.
+#[proc_macro_attribute]
+pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let inject_matches = get_inject_matches(attr);
 
-#[derive(Debug)]
-struct MockMatch {
-    identifier: String,
-    function_to_mock: String,
-    function_signature: String
-}
+    let mut source = item.to_string();
 
-fn get_inject_matches(attr: TokenStream) -> Vec<InjectMatch> {
-    let attr_str = attr.to_string();
-    let without_parens = &attr_str[1..attr_str.len() - 1];
+    let mut context_setter_string = HEADER.to_string();
 
-    let mut result = vec![];
-
-    for part in without_parens.split("\" ,") {
-        let sub_parts: Vec<_> = part.split("=").collect();
-        let identifier = sub_parts[0].trim().to_string();
-        let function_to_mock = sub_parts[1].trim().replace("\"", "");
-
-        result.push(InjectMatch { identifier: identifier, function_to_mock: function_to_mock });
+    for i_match in inject_matches {
+        write!(
+            context_setter_string,
+            "_mock_me_test_context_instance.set(\"{}\".to_string(), {} as usize);\n",
+            i_match.identifier, i_match.function_to_mock
+        ).unwrap();
     }
 
-    result
-}
+    // I should find a more structured way of injecting test context into top of method
+    let insertion_point = source.find("{").unwrap() + 1;
+    source.insert_str(insertion_point, &*context_setter_string);
 
-fn get_mock_matches(attr: TokenStream) -> Vec<MockMatch> {
-    let attr_str = attr.to_string();
-    let without_parens = &attr_str[1..attr_str.len() - 1];
-
-    let mut result = vec![];
-
-    for part in without_parens.split("\" ,") {
-        let sub_parts: Vec<_> = part.split("=").collect();
-        let identifier = sub_parts[0].trim().to_string();
-
-        let function_portions: Vec<_> = sub_parts[1].split(":").collect();
-        let function_to_mock = function_portions[0].trim().to_string().replace("\"", "");
-        let function_signature = function_portions[1].trim().replace("\"", "");
-
-        result.push(MockMatch {
-            identifier: identifier,
-            function_to_mock: function_to_mock,
-            function_signature: function_signature
-        });
-    }
-
-    result
+    source.parse().unwrap()
 }

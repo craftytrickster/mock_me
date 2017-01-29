@@ -1,53 +1,58 @@
 #![feature(proc_macro)]
-extern crate mockme;
-use mockme::{mock, inject};
+extern crate mock_me;
+use mock_me::{mock, inject};
 
-//#[test]
-fn function_call_without_mock() {
-    let result = concrete_process_payment(50000f64, 100u32);
-    assert_eq!(result, "Concrete payment of 50000 just processed");
+#[mock(id_1="external_db_call: fn(u32) -> String", id_2="other_call: fn() -> String")]
+fn my_super_cool_function() -> String {
+    let input = 42u32;
+    // external_db_call will be replaced with fake_mocked_call during testing
+    let db_result = external_db_call(input);
+
+    // other_call will also be replaced
+    let other_result = other_call();
+    format!("I have two results! {} and {}", db_result, other_result)
 }
-
-//#[test]
-//#[inject(mock_method_id_1, fake_process_payment)]
-fn actual_test() {
-    let result = function_call_with_mock(50000f64);
-    assert_eq!(result, "No processing occurred, just testing 50000");
-}
-
 
 #[test]
-#[inject(mock_method_id_1="duh")]
+#[inject(id_1="db_fake", id_2="other_fake")]
 fn actual_test2() {
-    let result = function_call_with_mock(50000f64);
-    assert_eq!(result, "stupid100");
+    let result = my_super_cool_function();
+    assert_eq!(result, "I have two results! Faker! and This is indeed a disturbing universe.");
 }
 
-fn duh(_: f64, v: u32) -> String { format!("stupid{}99", v) }
-fn fake_multiple(value: f64) -> f64 { 12340f64 }
-/*
-#[mock(
-    fun_crazy_mock(concrete_process_payment="fn(f64) -> String"),
-    boring_crazy_mock(concrete_process_payment="fn(f64) -> String")
-)]
-*/
+fn db_fake(_: u32) -> String { "Faker!".to_string() }
+fn other_fake() -> String { "This is indeed a disturbing universe.".to_string() }
 
-#[mock(
-    mock_method_id_1="concrete_process_payment: fn(f64, u32) -> String"
-)]
-fn function_call_with_mock(value: f64) -> String {
-    let second_value = multiple(100f64);
-    concrete_process_payment(value, second_value as u32)
+
+
+#[mock(fun="silly_func: fn(f64, f64) -> f64")]
+fn function_with_fun_id() -> f64 {
+    silly_func(30f64, 20f64)
 }
 
-fn multiple(value: f64) -> f64 {
-    value * 52f64
+#[allow(dead_code)]
+fn silly_func(num_1: f64, num_2: f64) -> f64 {
+    num_1 + num_2
 }
 
-fn concrete_process_payment(amount: f64, v: u32) -> String {
-    format!("Concrete payment of {} just processed", amount + v as f64)
+#[test]
+#[inject(fun="replacement_1")]
+fn test_with_silly_func_1() {
+    let result = function_with_fun_id();
+    assert_eq!(result, 10f64);
 }
 
-fn fake_process_payment(amount: f64) -> String {
-    format!("No processing occurred, just testing {}", amount)
+fn replacement_1(num_1: f64, num_2: f64) -> f64 {
+    num_1 - num_2
+}
+
+#[test]
+#[inject(fun="replacement_2")]
+fn test_with_silly_func_2() {
+    let result = function_with_fun_id();
+    assert_eq!(result, 600f64);
+}
+
+fn replacement_2(num_1: f64, num_2: f64) -> f64 {
+    num_1 * num_2
 }

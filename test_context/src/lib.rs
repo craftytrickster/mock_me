@@ -1,3 +1,8 @@
+// The Test Context Crate is private and should not be consumed by any external APIs.
+// It exists solely as a way for the mock_me crate to store injected functions
+// to replace the functions that the programmer has mocked.
+
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -34,7 +39,6 @@ impl Drop for TextContext {
         lookup.clear();
     }
 }
-
 
 
 pub fn get_test_context() -> TextContext {

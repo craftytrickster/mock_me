@@ -5,3 +5,6 @@ authors = ["David Raifaizen <d-raif@hotmail.com>"]
 
 [dependencies]
 lazy_static = "0.2.2"
+
+[lib]
+doc = false

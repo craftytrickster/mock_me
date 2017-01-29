@@ -1,6 +1,6 @@
 [package]
-name = "mockme"
-version = "0.1.0"
+name = "mock_me"
+version = "0.2.0"
 authors = ["David Raifaizen <d-raif@hotmail.com>"]
 
 [dependencies]
