@@ -1,6 +1,6 @@
 [package]
 name = "mock_me"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["David Raifaizen <d-raif@hotmail.com>"]
 description = "MockMe is a tool used to mock dependencies / function calls when running unit (lib) tests in Rust."
 repository = "https://github.com/craftytrickster/mock_me"
@@ -10,7 +10,7 @@ categories = ["development-tools::testing"]
 license = "MIT"
 
 [dependencies]
-mock_me_test_context = "0.1.0"
+mock_me_test_context = "0.1.1"
 
 [lib]
 crate-type = ["proc-macro"]
