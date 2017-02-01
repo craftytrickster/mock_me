@@ -5,7 +5,7 @@ MockMe is a tool used to mock dependencies / function calls when running unit (l
 
 ## How to Use
 
-*Currently, only works on nightly*
+*Currently, only works on nightly.*
 
 Simply use the macro as seen in the example below.
 When this code is run normally, MockMe will have no effect.
