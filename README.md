@@ -3,6 +3,15 @@ MockMe
 
 MockMe is a tool used to mock dependencies / function calls when running unit (lib) tests in Rust.
 
+## Caution
+
+Unfortunately, due to the non determinstic order of how tests are performed by rust/cargo,
+a mocked function can only be injected by a single test. If it is mocked by multiple tests,
+it may be subject to random panics due to race conditions. 
+As a result, this is mainly just an experimental toy crate and it should not be used in 
+production codebases. 
+
+
 ## How to Use
 
 *Currently, only works on nightly.*

@@ -45,14 +45,3 @@ fn test_with_silly_func_1() {
 fn replacement_1(num_1: f64, num_2: f64) -> f64 {
     num_1 - num_2
 }
-
-#[test]
-#[inject(fun="replacement_2")]
-fn test_with_silly_func_2() {
-    let result = function_with_fun_id();
-    assert_eq!(result, 600f64);
-}
-
-fn replacement_2(num_1: f64, num_2: f64) -> f64 {
-    num_1 * num_2
-}
