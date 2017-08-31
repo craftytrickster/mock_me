@@ -45,11 +45,8 @@
 //! ```
 
 #![feature(proc_macro)]
-#![feature(insert_str)]
 extern crate proc_macro;
 use proc_macro::TokenStream;
-
-extern crate mock_me_test_context;
 
 use std::fmt::Write;
 
