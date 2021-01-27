@@ -13,7 +13,7 @@ pub struct InjectMatch {
 pub struct MockMatch {
     pub identifier: String,
     pub function_to_mock: String,
-    pub function_signature: String
+    pub function_signature: String,
 }
 
 pub fn get_inject_matches(attr_str: &str) -> Vec<InjectMatch> {
@@ -35,10 +35,19 @@ mod test {
         let token_string = r#"id_1 = "db_fake" , id_2 = "other_fake""#;
 
         let inject_matches = get_inject_matches(token_string);
-        assert_eq!(inject_matches, vec![
-            InjectMatch { identifier: "id_1".to_string(), function_to_mock: "db_fake".to_string() },
-            InjectMatch { identifier: "id_2".to_string(), function_to_mock: "other_fake".to_string() },
-        ]);
+        assert_eq!(
+            inject_matches,
+            vec![
+                InjectMatch {
+                    identifier: "id_1".to_string(),
+                    function_to_mock: "db_fake".to_string()
+                },
+                InjectMatch {
+                    identifier: "id_2".to_string(),
+                    function_to_mock: "other_fake".to_string()
+                },
+            ]
+        );
     }
 
     #[test]
@@ -48,31 +57,36 @@ mod test {
             "other_call: fn() -> String" "#;
 
         let mock_matches = get_mock_matches(token_string);
-        assert_eq!(mock_matches, vec![
-            MockMatch {
-                identifier: "id_1".to_string(),
-                function_to_mock: "external_db_call".to_string(),
-                function_signature: "fn(u32) -> String".to_string()
-            },
-            MockMatch{
-                identifier: "id_2".to_string(),
-                function_to_mock: "other_call".to_string(),
-                function_signature: "fn() -> String".to_string()
-            }
-        ]);
+        assert_eq!(
+            mock_matches,
+            vec![
+                MockMatch {
+                    identifier: "id_1".to_string(),
+                    function_to_mock: "external_db_call".to_string(),
+                    function_signature: "fn(u32) -> String".to_string()
+                },
+                MockMatch {
+                    identifier: "id_2".to_string(),
+                    function_to_mock: "other_call".to_string(),
+                    function_signature: "fn() -> String".to_string()
+                }
+            ]
+        );
     }
 }
-
 
 // inspired in https://limpet.net/mbrubeck/2014/08/11/toy-layout-engine-2.html
 struct Parser<'a> {
     pos: usize,
-    input: &'a str
+    input: &'a str,
 }
 
 impl<'a> Parser<'a> {
     fn new(input: &'a str) -> Self {
-        Parser { pos: 0, input: input }
+        Parser {
+            pos: 0,
+            input: input,
+        }
     }
 
     fn get_inject_matches(mut self) -> Vec<InjectMatch> {
@@ -83,7 +97,10 @@ impl<'a> Parser<'a> {
         self.execute(Parser::consume_mock_match)
     }
 
-    fn execute<F, R>(&mut self, mut consume_function: F) -> Vec<R> where F: FnMut(&mut Self) -> R {
+    fn execute<F, R>(&mut self, mut consume_function: F) -> Vec<R>
+    where
+        F: FnMut(&mut Self) -> R,
+    {
         let mut result = Vec::new();
 
         loop {
@@ -129,7 +146,10 @@ impl<'a> Parser<'a> {
         self.consume_whitespace();
         assert_eq!(self.consume_char(), '"');
 
-        InjectMatch { identifier: identifier, function_to_mock: function_to_mock }
+        InjectMatch {
+            identifier: identifier,
+            function_to_mock: function_to_mock,
+        }
     }
 
     fn consume_mock_match(&mut self) -> MockMatch {
@@ -150,7 +170,7 @@ impl<'a> Parser<'a> {
         MockMatch {
             identifier: identifier,
             function_to_mock: function_to_mock,
-            function_signature: function_signature
+            function_signature: function_signature,
         }
     }
 
@@ -168,7 +188,10 @@ impl<'a> Parser<'a> {
         cur_char as char
     }
 
-    fn consume_while<F>(&mut self, test: F) -> String where F: Fn(char) -> bool {
+    fn consume_while<F>(&mut self, test: F) -> String
+    where
+        F: Fn(char) -> bool,
+    {
         let mut result = String::new();
 
         while !self.eof() && test(self.next_char()) {

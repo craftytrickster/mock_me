@@ -7,9 +7,9 @@
 #[macro_use]
 extern crate lazy_static;
 
+use std::collections::HashMap;
 use std::ops::Drop;
 use std::sync::Mutex;
-use std::collections::HashMap;
 
 lazy_static! {
     // Protected by Mutex since tests can be run in parallel
@@ -26,7 +26,10 @@ impl TextContext {
     pub fn set(&self, key: String, value: usize) {
         let mut lookup = GLOBAL_FUNCTION_LOOKUP.lock().unwrap();
         if lookup.contains_key(&*key) {
-            panic!("You have already used the mocking key '{}', you cannot have duplicate keys!", key);
+            panic!(
+                "You have already used the mocking key '{}', you cannot have duplicate keys!",
+                key
+            );
         }
 
         lookup.insert(key, value);
@@ -36,7 +39,10 @@ impl TextContext {
         let lookup = GLOBAL_FUNCTION_LOOKUP.lock().unwrap();
         match lookup.get(key) {
             Some(function_pointer) => *function_pointer,
-            None => panic!("Unable to find a mocked function with the identifier: {}.", key)
+            None => panic!(
+                "Unable to find a mocked function with the identifier: {}.",
+                key
+            ),
         }
     }
 }
@@ -47,7 +53,6 @@ impl Drop for TextContext {
         lookup.clear();
     }
 }
-
 
 pub fn get_test_context() -> TextContext {
     TextContext

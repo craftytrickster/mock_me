@@ -1,7 +1,10 @@
 extern crate mock_me;
-use mock_me::{mock, inject};
+use mock_me::{inject, mock};
 
-#[mock(id_1="external_db_call: fn(u32) -> String", id_2="other_call: fn() -> String")]
+#[mock(
+    id_1 = "external_db_call: fn(u32) -> String",
+    id_2 = "other_call: fn() -> String"
+)]
 fn my_super_cool_function() -> String {
     let input = 42u32;
     // external_db_call will be replaced with fake_mocked_call during testing
@@ -13,18 +16,23 @@ fn my_super_cool_function() -> String {
 }
 
 #[test]
-#[inject(id_1="db_fake", id_2="other_fake")]
+#[inject(id_1 = "db_fake", id_2 = "other_fake")]
 fn actual_test2() {
     let result = my_super_cool_function();
-    assert_eq!(result, "I have two results! Faker! and This is indeed a disturbing universe.");
+    assert_eq!(
+        result,
+        "I have two results! Faker! and This is indeed a disturbing universe."
+    );
 }
 
-fn db_fake(_: u32) -> String { "Faker!".to_string() }
-fn other_fake() -> String { "This is indeed a disturbing universe.".to_string() }
+fn db_fake(_: u32) -> String {
+    "Faker!".to_string()
+}
+fn other_fake() -> String {
+    "This is indeed a disturbing universe.".to_string()
+}
 
-
-
-#[mock(fun="silly_func: fn(f64, f64) -> f64")]
+#[mock(fun = "silly_func: fn(f64, f64) -> f64")]
 fn function_with_fun_id() -> f64 {
     silly_func(30f64, 20f64)
 }
@@ -35,7 +43,7 @@ fn silly_func(num_1: f64, num_2: f64) -> f64 {
 }
 
 #[test]
-#[inject(fun="replacement_1")]
+#[inject(fun = "replacement_1")]
 fn test_with_silly_func_1() {
     let result = function_with_fun_id();
     assert_eq!(result, 10f64);

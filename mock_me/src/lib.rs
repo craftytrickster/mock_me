@@ -67,18 +67,20 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let mut modified_source = source.clone();
     for m_match in mock_matches {
-        let ctx_getter = format!(r#"
+        let ctx_getter = format!(
+            r#"
             (unsafe {{
                 let _mock_me_test_usize_func = _mock_me_test_context_instance.get("{}");
                 let _mock_me_test_transmuted_func: {} = std::mem::transmute(_mock_me_test_usize_func);
                 _mock_me_test_transmuted_func
             }})
-        "#, m_match.identifier, m_match.function_signature);
+        "#,
+            m_match.identifier, m_match.function_signature
+        );
 
         // string replacement should be more controlled ideally than a blind replace
         modified_source = modified_source.replace(&*m_match.function_to_mock, &*ctx_getter);
     }
-
 
     let branched_source = format!(
         r#"
@@ -87,9 +89,9 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
 
         #[cfg(test)]
         {}
-        "#, source, modified_source
+        "#,
+        source, modified_source
     );
-
 
     branched_source.parse().unwrap()
 }
@@ -110,7 +112,8 @@ pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
             context_setter_string,
             "_mock_me_test_context_instance.set(\"{}\".to_string(), {} as usize);\n",
             i_match.identifier, i_match.function_to_mock
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     // I should find a more structured way of injecting test context into top of method
