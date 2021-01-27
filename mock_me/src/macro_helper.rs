@@ -32,7 +32,7 @@ mod test {
 
     #[test]
     fn inject_macro_values_should_parse_correctly() {
-        let token_string = r#"( id_1 = "db_fake" , id_2 = "other_fake" )"#;
+        let token_string = r#"id_1 = "db_fake" , id_2 = "other_fake""#;
 
         let inject_matches = get_inject_matches(token_string);
         assert_eq!(inject_matches, vec![
@@ -43,9 +43,9 @@ mod test {
 
     #[test]
     fn mock_macro_values_should_parse_correctly() {
-        let token_string = r#"(
+        let token_string = r#"
             id_1 = "external_db_call: fn(u32) -> String" , id_2 =
-            "other_call: fn() -> String" )"#;
+            "other_call: fn() -> String" "#;
 
         let mock_matches = get_mock_matches(token_string);
         assert_eq!(mock_matches, vec![
@@ -86,31 +86,28 @@ impl<'a> Parser<'a> {
     fn execute<F, R>(&mut self, mut consume_function: F) -> Vec<R> where F: FnMut(&mut Self) -> R {
         let mut result = Vec::new();
 
-        assert_eq!(self.consume_char(), '(');
-
         loop {
             self.consume_whitespace();
 
-            if self.eof() || self.next_char() == ')' {
+            if self.eof() {
                 break;
             }
 
             let item = consume_function(self);
             result.push(item);
 
-            if !self.consume_has_separator() {
+            self.consume_whitespace();
+
+            if self.eof() || !self.consume_has_separator() {
                 break;
             }
         }
 
         self.consume_whitespace();
-        assert_eq!(self.consume_char(), ')');
         result
     }
 
     fn consume_has_separator(&mut self) -> bool {
-        self.consume_whitespace();
-
         let mut has_next = false;
         if self.next_char() == ',' {
             has_next = true;

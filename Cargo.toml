@@ -1,14 +1,6 @@
-[package]
-name = "mock_me"
-version = "0.2.3"
-authors = ["David Raifaizen <d-raif@hotmail.com>"]
-description = "MockMe is a tool used to mock dependencies / function calls when running unit (lib) tests in Rust."
-repository = "https://github.com/craftytrickster/mock_me"
-readme = "README.md"
-license = "MIT"
+[workspace]
 
-[dependencies]
-mock_me_test_context = "0.1.2"
-
-[lib]
-crate-type = ["proc-macro"]
+members = [
+    "mock_me",
+    "mock_me_test_context"
+]

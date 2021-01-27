@@ -1,0 +1,13 @@
+[package]
+name = "mock_me_test_context"
+version = "0.1.2"
+authors = ["David Raifaizen <d-raif@hotmail.com>"]
+description= " The Test Context Crate is private and should not be consumed by any external APIs. It is needed by the mock_me crate."
+repository = "https://github.com/craftytrickster/mock_me_test_context"
+license = "MIT"
+
+[dependencies]
+lazy_static = "0.2.2"
+
+[lib]
+doc = false

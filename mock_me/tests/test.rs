@@ -1,4 +1,3 @@
-#![feature(proc_macro)]
 extern crate mock_me;
 use mock_me::{mock, inject};
 
