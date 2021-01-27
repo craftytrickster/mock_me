@@ -11,4 +11,4 @@ license = "MIT"
 mock_me_test_context = { version = "0.1.2", path = "../mock_me_test_context" }
 
 [lib]
-crate-type = ["proc-macro"]
+proc-macro = true

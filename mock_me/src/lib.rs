@@ -62,7 +62,7 @@ pub fn mock(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut source = item.to_string();
 
     // I should find a more structured way of injecting test context into top of method
-    let insertion_point = source.find("{").unwrap() + 1;
+    let insertion_point = source.find('{').unwrap() + 1;
     source.insert_str(insertion_point, HEADER);
 
     let mut modified_source = source.clone();
@@ -108,16 +108,16 @@ pub fn inject(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut context_setter_string = HEADER.to_string();
 
     for i_match in inject_matches {
-        write!(
+        writeln!(
             context_setter_string,
-            "_mock_me_test_context_instance.set(\"{}\".to_string(), {} as usize);\n",
+            "_mock_me_test_context_instance.set(\"{}\".to_string(), {} as usize);",
             i_match.identifier, i_match.function_to_mock
         )
         .unwrap();
     }
 
     // I should find a more structured way of injecting test context into top of method
-    let insertion_point = source.find("{").unwrap() + 1;
+    let insertion_point = source.find('{').unwrap() + 1;
     source.insert_str(insertion_point, &*context_setter_string);
 
     source.parse().unwrap()

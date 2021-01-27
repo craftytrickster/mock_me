@@ -1,4 +1,4 @@
-pub const HEADER: &'static str = r#"
+pub const HEADER: &str = r#"
     extern crate mock_me_test_context;
     let _mock_me_test_context_instance = mock_me_test_context::get_test_context();
 "#;
@@ -83,10 +83,7 @@ struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     fn new(input: &'a str) -> Self {
-        Parser {
-            pos: 0,
-            input: input,
-        }
+        Parser { pos: 0, input }
     }
 
     fn get_inject_matches(mut self) -> Vec<InjectMatch> {
@@ -147,8 +144,8 @@ impl<'a> Parser<'a> {
         assert_eq!(self.consume_char(), '"');
 
         InjectMatch {
-            identifier: identifier,
-            function_to_mock: function_to_mock,
+            identifier,
+            function_to_mock,
         }
     }
 
@@ -168,9 +165,9 @@ impl<'a> Parser<'a> {
         assert_eq!(self.consume_char(), '"');
 
         MockMatch {
-            identifier: identifier,
-            function_to_mock: function_to_mock,
-            function_signature: function_signature,
+            identifier,
+            function_to_mock,
+            function_signature,
         }
     }
 
